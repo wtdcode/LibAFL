@@ -512,6 +512,7 @@ where
         EM: EventFirer<State = S>,
         OT: ObserversTuple<S>,
     {
+        // https://github.com/rust-lang/portable-simd/pull/371
         // 128 bits vectors
         type VectorType = core::simd::u8x16;
 
@@ -547,20 +548,20 @@ where
             }
         }*/
 
-        let steps = size / VectorType::LANES;
-        let left = size % VectorType::LANES;
+        let steps = size / VectorType::LEN;
+        let left = size % VectorType::LEN;
 
         if let Some(novelties) = self.novelties.as_mut() {
             novelties.clear();
             for step in 0..steps {
-                let i = step * VectorType::LANES;
+                let i = step * VectorType::LEN;
                 let history = VectorType::from_slice(&history_map[i..]);
                 let items = VectorType::from_slice(&map[i..]);
 
                 if items.simd_max(history) != history {
                     interesting = true;
                     unsafe {
-                        for j in i..(i + VectorType::LANES) {
+                        for j in i..(i + VectorType::LEN) {
                             let item = *map.get_unchecked(j);
                             if item > *history_map.get_unchecked(j) {
                                 novelties.push(j);
@@ -581,7 +582,7 @@ where
             }
         } else {
             for step in 0..steps {
-                let i = step * VectorType::LANES;
+                let i = step * VectorType::LEN;
                 let history = VectorType::from_slice(&history_map[i..]);
                 let items = VectorType::from_slice(&map[i..]);
 
